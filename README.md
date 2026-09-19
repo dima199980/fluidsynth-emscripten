@@ -57,6 +57,23 @@ To use `libfluidsynth-<version>.js` in AudioWorklet, load it into AudioWorklet b
 
 ## Miscellaneous
 
+### Independent Songsterr track audio (opt-in)
+
+Set `synth.songsterr-track-audio` to `1` before creating the synth, and set
+`synth.audio-channels`, `synth.audio-groups`, and `synth.effects-groups` to the SMF
+track count. The setting defaults to `0`: existing stereo playback is unchanged.
+Check that setting the option succeeds before using this mode with a WASM build.
+
+This mode accepts Songsterr-generated SMF tracks using melodic channels 0–8 and
+drum channel 9, with at most 25 tracks at the default 256 MIDI channels. Each
+track retains ten private MIDI channels, including its own drum channel, across
+reset and seek. Channel controllers, program changes, and pitch bends remain
+within that track. Audio and reverb/chorus are routed to the same track group.
+Render all groups with `fluid_synth_process`; fewer output groups intentionally
+wrap/mix according to the normal FluidSynth group semantics. As before, callers
+must zero output buffers before rendering. General SMF channel layouts and
+device-specific SysEx channel reassignment are not supported by this mode.
+
 * Currently only several APIs are tested. Some APIs such as for drivers may not work.
 
 ## License
