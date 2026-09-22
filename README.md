@@ -22,11 +22,11 @@ In order to build WebAssembly version of fluidsynth by yourself:
 A single command builds every variant into `./dist`:
 
 ```shell
-docker compose run --rm --build builder
+docker compose run --rm --build --user "$(id -u):$(id -g)" builder
 ```
 
-The image carries a prebuilt libsndfile (needed for sf3), so a rebuild after a source
-change only recompiles fluidsynth.
+`--user` keeps the artifacts owned by you rather than by root. The image carries a
+prebuilt libsndfile (needed for sf3), so a rebuild only recompiles fluidsynth.
 
 ## Build (from jet2jet)
 
