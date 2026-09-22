@@ -9,19 +9,24 @@ The original README is here: [README.original.md](./README.original.md)
 
 In order to build WebAssembly version of fluidsynth by yourself:
 ```shell
-# Optional step to include sf3 support
-./build_libsdnfile.sh
-# All variants of libfluidsynth-X.X.X.js + libfuluidsynth-X.X.X.wasm files will be stored to ./dist 
+# Builds libsndfile into ../libsndfile-emscripten; build.sh requires it for the sf3 variants
+./build_libsndfile.sh
+# All variants of libfluidsynth-X.X.X.js + libfluidsynth-X.X.X.wasm files will be stored to ./dist
 ./build.sh
 ```
 
+`build.sh` installs the Emscripten SDK into `../emsdk` if `emcmake` is not on `PATH`.
+
 ## Build with Docker (enikey87)
 
+A single command builds every variant into `./dist`:
+
 ```shell
-docker-compose build        # to create the Docker image
-docker-compose up           # to create the Docker container and build
-docker-compose run builder  # to build again after any modification
+docker compose run --rm --build --user "$(id -u):$(id -g)" builder
 ```
+
+`--user` keeps the artifacts owned by you rather than by root. The image carries a
+prebuilt libsndfile (needed for sf3), so a rebuild only recompiles fluidsynth.
 
 ## Build (from jet2jet)
 
