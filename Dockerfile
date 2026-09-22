@@ -9,7 +9,7 @@ RUN apt-get update \
 WORKDIR /code
 
 # From /code, build.sh resolves ../libsndfile-emscripten to /libsndfile-emscripten.
-COPY build_libsndfile.sh ./
+COPY build_libsndfile.sh emsdk-env.sh ./
 # a+rwX on the cache lets the build run as the host user, so ./dist is not root-owned.
 RUN ./build_libsndfile.sh \
     && chmod -R a+rwX /emsdk/upstream/emscripten/cache

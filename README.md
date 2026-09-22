@@ -7,15 +7,14 @@ The original README is here: [README.original.md](./README.original.md)
 
 ## Build (enikey87)
 
-In order to build WebAssembly version of fluidsynth by yourself:
+Prerequisites (Debian/Ubuntu): `git python3 wget xz-utils cmake make pkg-config autoconf automake libtool`.
+
 ```shell
-# Builds libsndfile into ../libsndfile-emscripten; build.sh requires it for the sf3 variants
-./build_libsndfile.sh
-# All variants of libfluidsynth-X.X.X.js + libfluidsynth-X.X.X.wasm files will be stored to ./dist
-./build.sh
+./build_libsndfile.sh   # libsndfile + ogg/vorbis/flac/opus into ../libsndfile-emscripten; build.sh needs it for the sf3 variants
+./build.sh              # every libfluidsynth-X.X.X*.js / .wasm variant into ./dist
 ```
 
-`build.sh` installs the Emscripten SDK into `../emsdk` if `emcmake` is not on `PATH`.
+Both scripts source `emsdk-env.sh`, which installs Emscripten `3.1.10` (override with `EMSDK_VERSION`) into `../emsdk` unless `emcmake` is already on `PATH`. An `emcmake` you provide yourself must run with node < 18: 3.1.10 output calls the global `fetch` node 18+ ships, and autoconf's run test fails with `cannot run C compiled programs`.
 
 ## Build with Docker (enikey87)
 
