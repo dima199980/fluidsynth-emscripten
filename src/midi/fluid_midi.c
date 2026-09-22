@@ -385,7 +385,7 @@ fluid_midi_file_load_tracks(fluid_midi_file *mf, fluid_player_t *player)
 {
     int i;
 
-    if(player->synth->songsterr_track_audio &&
+    if(player->synth->per_track_audio &&
             mf->ntracks > player->synth->midi_channels / NUMBER_OF_RESERVED_CHANNELS_PER_TRACK)
     {
         FLUID_LOG(FLUID_ERR, "Too many SMF tracks for independent track audio");
@@ -575,13 +575,13 @@ fluid_midi_file_read_track(fluid_midi_file *mf, fluid_player_t *player, int num)
     fluid_midi_event_t *evt = track->cur;
 
     while (evt) {
-        if(player->synth->songsterr_track_audio &&
+        if(player->synth->per_track_audio &&
                 evt->channel >= NUMBER_OF_RESERVED_CHANNELS_PER_TRACK)
         {
             FLUID_LOG(FLUID_ERR, "Independent track audio requires MIDI channels 0 through 9");
             return FLUID_FAILED;
         }
-        if (evt->channel != 9 || player->synth->songsterr_track_audio) {
+        if (evt->channel != 9 || player->synth->per_track_audio) {
             evt->channel = num * NUMBER_OF_RESERVED_CHANNELS_PER_TRACK + evt->channel;
         }
         evt = evt->next;

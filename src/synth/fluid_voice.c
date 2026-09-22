@@ -356,7 +356,7 @@ fluid_voice_init(fluid_voice_t *voice, fluid_sample_t *sample,
     UPDATE_RVOICE_R1(fluid_rvoice_set_synth_gain, voice->synth_gain);
 
     /* Set up buffer mapping, should be done more flexible in the future. */
-    audio_group = channel->synth->songsterr_track_audio
+    audio_group = channel->synth->per_track_audio
         ? voice->chan / NUMBER_OF_RESERVED_CHANNELS_PER_TRACK : voice->chan;
     i = 2 * channel->synth->audio_groups;
     i += (audio_group % channel->synth->effects_groups) * channel->synth->effects_channels;

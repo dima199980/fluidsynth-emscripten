@@ -91,7 +91,7 @@ fluid_channel_init(fluid_channel_t *chan)
     chan->portamentomode = FLUID_CHANNEL_PORTAMENTO_MODE_LEGATO_ONLY;	/* Default mode */
     /*--- End of poly/mono initialization --------------------------------------*/
 
-    i = chan->synth->songsterr_track_audio
+    i = chan->synth->per_track_audio
         ? chan->channum % NUMBER_OF_RESERVED_CHANNELS_PER_TRACK : chan->channum;
     chan->channel_type = (i == 9) ? CHANNEL_TYPE_DRUM : CHANNEL_TYPE_MELODIC;
     prognum = 0;

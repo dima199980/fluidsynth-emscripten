@@ -62,9 +62,9 @@ static void test_events(int enabled)
     fluid_synth_t *synth;
     fluid_player_t *player;
     int default_value;
-    TEST_SUCCESS(fluid_settings_getint(settings, "synth.songsterr-track-audio", &default_value));
+    TEST_SUCCESS(fluid_settings_getint(settings, "synth.per-track-audio", &default_value));
     TEST_ASSERT(default_value == 0);
-    TEST_SUCCESS(fluid_settings_setint(settings, "synth.songsterr-track-audio", enabled));
+    TEST_SUCCESS(fluid_settings_setint(settings, "synth.per-track-audio", enabled));
     TEST_SUCCESS(fluid_settings_setstr(settings, "player.timing-source", "sample"));
     synth = new_fluid_synth(settings);
     TEST_ASSERT(synth != NULL);
@@ -89,7 +89,7 @@ static void test_output_mapping(int enabled, int channel, int group)
     fluid_synth_t *synth;
     fluid_voice_t *voices[8];
     int i, id;
-    TEST_SUCCESS(fluid_settings_setint(settings, "synth.songsterr-track-audio", enabled));
+    TEST_SUCCESS(fluid_settings_setint(settings, "synth.per-track-audio", enabled));
     TEST_SUCCESS(fluid_settings_setint(settings, "synth.audio-channels", 3));
     TEST_SUCCESS(fluid_settings_setint(settings, "synth.audio-groups", 3));
     TEST_SUCCESS(fluid_settings_setint(settings, "synth.effects-groups", 3));
@@ -147,7 +147,7 @@ static void test_layout(int enabled, int tracks, int channel, int midi_channels,
         destination[9] |= i == tracks - 1 ? channel : 9;
         destination[14] |= i == tracks - 1 ? channel : 9;
     }
-    TEST_SUCCESS(fluid_settings_setint(settings, "synth.songsterr-track-audio", enabled));
+    TEST_SUCCESS(fluid_settings_setint(settings, "synth.per-track-audio", enabled));
     TEST_SUCCESS(fluid_settings_setint(settings, "synth.midi-channels", midi_channels));
     TEST_SUCCESS(fluid_settings_setstr(settings, "player.timing-source", "sample"));
     synth = new_fluid_synth(settings);
