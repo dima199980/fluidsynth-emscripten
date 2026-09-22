@@ -6737,7 +6737,7 @@ function createExportWrapper(name, fixedasm) {
 
 var wasmBinaryFile;
 
-wasmBinaryFile = "libfluidsynth-2.3.0-debug.wasm";
+wasmBinaryFile = "libfluidsynth-2.3.0-sf3-debug.wasm";
 
 if (!isDataURI(wasmBinaryFile)) {
  wasmBinaryFile = locateFile(wasmBinaryFile);
@@ -6932,6 +6932,10 @@ function unSign(value, bits) {
  return bits <= 32 ? 2 * Math.abs(1 << bits - 1) + value : Math.pow(2, bits) + value;
 }
 
+function ___assert_fail(condition, filename, line, func) {
+ abort("Assertion failed: " + UTF8ToString(condition) + ", at: " + [ filename ? UTF8ToString(filename) : "unknown filename", line, func ? UTF8ToString(func) : "unknown function" ]);
+}
+
 function ___cxa_allocate_exception(size) {
  return _malloc(size + 24) + 24;
 }
@@ -7013,11 +7017,6 @@ function ___cxa_throw(ptr, type, destructor) {
  exceptionLast = ptr;
  uncaughtExceptionCount++;
  throw ptr + " - Exception catching is disabled, this exception cannot be caught. Compile with -sNO_DISABLE_EXCEPTION_CATCHING or -sEXCEPTION_CATCHING_ALLOWED=[..] to catch.";
-}
-
-function setErrNo(value) {
- SAFE_HEAP_STORE(___errno_location() | 0, value | 0, 4);
- return value;
 }
 
 var PATH = {
@@ -9402,6 +9401,40 @@ var SYSCALLS = {
  }
 };
 
+function ___syscall_faccessat(dirfd, path, amode, flags) {
+ try {
+  path = SYSCALLS.getStr(path);
+  assert(flags === 0);
+  path = SYSCALLS.calculateAt(dirfd, path);
+  if (amode & ~7) {
+   return -28;
+  }
+  var lookup = FS.lookupPath(path, {
+   follow: true
+  });
+  var node = lookup.node;
+  if (!node) {
+   return -44;
+  }
+  var perms = "";
+  if (amode & 4) perms += "r";
+  if (amode & 2) perms += "w";
+  if (amode & 1) perms += "x";
+  if (perms && FS.nodePermissions(node, perms)) {
+   return -2;
+  }
+  return 0;
+ } catch (e) {
+  if (typeof FS == "undefined" || !(e instanceof FS.ErrnoError)) throw e;
+  return -e.errno;
+ }
+}
+
+function setErrNo(value) {
+ SAFE_HEAP_STORE(___errno_location() | 0, value | 0, 4);
+ return value;
+}
+
 function ___syscall_fcntl64(fd, cmd, varargs) {
  SYSCALLS.varargs = varargs;
  try {
@@ -9467,6 +9500,17 @@ function ___syscall_fstat64(fd, buf) {
  try {
   var stream = SYSCALLS.getStreamFromFD(fd);
   return SYSCALLS.doStat(FS.stat, stream.path, buf);
+ } catch (e) {
+  if (typeof FS == "undefined" || !(e instanceof FS.ErrnoError)) throw e;
+  return -e.errno;
+ }
+}
+
+function ___syscall_ftruncate64(fd, length_low, length_high) {
+ try {
+  var length = length_high * 4294967296 + (length_low >>> 0);
+  FS.ftruncate(fd, length);
+  return 0;
  } catch (e) {
   if (typeof FS == "undefined" || !(e instanceof FS.ErrnoError)) throw e;
   return -e.errno;
@@ -9575,10 +9619,39 @@ function ___syscall_openat(dirfd, path, flags, varargs) {
  }
 }
 
+function ___syscall_rmdir(path) {
+ try {
+  path = SYSCALLS.getStr(path);
+  FS.rmdir(path);
+  return 0;
+ } catch (e) {
+  if (typeof FS == "undefined" || !(e instanceof FS.ErrnoError)) throw e;
+  return -e.errno;
+ }
+}
+
 function ___syscall_stat64(path, buf) {
  try {
   path = SYSCALLS.getStr(path);
   return SYSCALLS.doStat(FS.stat, path, buf);
+ } catch (e) {
+  if (typeof FS == "undefined" || !(e instanceof FS.ErrnoError)) throw e;
+  return -e.errno;
+ }
+}
+
+function ___syscall_unlinkat(dirfd, path, flags) {
+ try {
+  path = SYSCALLS.getStr(path);
+  path = SYSCALLS.calculateAt(dirfd, path);
+  if (flags === 0) {
+   FS.unlink(path);
+  } else if (flags === 512) {
+   FS.rmdir(path);
+  } else {
+   abort("Invalid flags passed to unlinkat");
+  }
+  return 0;
  } catch (e) {
   if (typeof FS == "undefined" || !(e instanceof FS.ErrnoError)) throw e;
   return -e.errno;
@@ -9593,6 +9666,52 @@ var nowIsMonotonic = true;
 
 function __emscripten_get_now_is_monotonic() {
  return nowIsMonotonic;
+}
+
+function __gmtime_js(time, tmPtr) {
+ var date = new Date((SAFE_HEAP_LOAD(time | 0, 4, 0) | 0) * 1e3);
+ SAFE_HEAP_STORE(tmPtr | 0, date.getUTCSeconds() | 0, 4);
+ SAFE_HEAP_STORE(tmPtr + 4 | 0, date.getUTCMinutes() | 0, 4);
+ SAFE_HEAP_STORE(tmPtr + 8 | 0, date.getUTCHours() | 0, 4);
+ SAFE_HEAP_STORE(tmPtr + 12 | 0, date.getUTCDate() | 0, 4);
+ SAFE_HEAP_STORE(tmPtr + 16 | 0, date.getUTCMonth() | 0, 4);
+ SAFE_HEAP_STORE(tmPtr + 20 | 0, date.getUTCFullYear() - 1900 | 0, 4);
+ SAFE_HEAP_STORE(tmPtr + 24 | 0, date.getUTCDay() | 0, 4);
+ var start = Date.UTC(date.getUTCFullYear(), 0, 1, 0, 0, 0, 0);
+ var yday = (date.getTime() - start) / (1e3 * 60 * 60 * 24) | 0;
+ SAFE_HEAP_STORE(tmPtr + 28 | 0, yday | 0, 4);
+}
+
+function _tzset_impl(timezone, daylight, tzname) {
+ var currentYear = new Date().getFullYear();
+ var winter = new Date(currentYear, 0, 1);
+ var summer = new Date(currentYear, 6, 1);
+ var winterOffset = winter.getTimezoneOffset();
+ var summerOffset = summer.getTimezoneOffset();
+ var stdTimezoneOffset = Math.max(winterOffset, summerOffset);
+ SAFE_HEAP_STORE(timezone | 0, stdTimezoneOffset * 60 | 0, 4);
+ SAFE_HEAP_STORE(daylight | 0, Number(winterOffset != summerOffset) | 0, 4);
+ function extractZone(date) {
+  var match = date.toTimeString().match(/\(([A-Za-z ]+)\)$/);
+  return match ? match[1] : "GMT";
+ }
+ var winterName = extractZone(winter);
+ var summerName = extractZone(summer);
+ var winterNamePtr = allocateUTF8(winterName);
+ var summerNamePtr = allocateUTF8(summerName);
+ if (summerOffset < winterOffset) {
+  SAFE_HEAP_STORE(tzname | 0, winterNamePtr | 0, 4);
+  SAFE_HEAP_STORE(tzname + 4 | 0, summerNamePtr | 0, 4);
+ } else {
+  SAFE_HEAP_STORE(tzname | 0, summerNamePtr | 0, 4);
+  SAFE_HEAP_STORE(tzname + 4 | 0, winterNamePtr | 0, 4);
+ }
+}
+
+function __tzset_js(timezone, daylight, tzname) {
+ if (__tzset_js.called) return;
+ __tzset_js.called = true;
+ _tzset_impl(timezone, daylight, tzname);
 }
 
 function _abort() {
@@ -9643,6 +9762,62 @@ function _emscripten_resize_heap(requestedSize) {
  }
  err("Failed to grow the heap from " + oldSize + " bytes to " + newSize + " bytes, not enough memory!");
  return false;
+}
+
+var ENV = {};
+
+function getExecutableName() {
+ return thisProgram || "./this.program";
+}
+
+function getEnvStrings() {
+ if (!getEnvStrings.strings) {
+  var lang = (typeof navigator == "object" && navigator.languages && navigator.languages[0] || "C").replace("-", "_") + ".UTF-8";
+  var env = {
+   "USER": "web_user",
+   "LOGNAME": "web_user",
+   "PATH": "/",
+   "PWD": "/",
+   "HOME": "/home/web_user",
+   "LANG": lang,
+   "_": getExecutableName()
+  };
+  for (var x in ENV) {
+   if (ENV[x] === undefined) delete env[x]; else env[x] = ENV[x];
+  }
+  var strings = [];
+  for (var x in env) {
+   strings.push(x + "=" + env[x]);
+  }
+  getEnvStrings.strings = strings;
+ }
+ return getEnvStrings.strings;
+}
+
+function _environ_get(__environ, environ_buf) {
+ var bufSize = 0;
+ getEnvStrings().forEach(function(string, i) {
+  var ptr = environ_buf + bufSize;
+  SAFE_HEAP_STORE(__environ + i * 4 | 0, ptr | 0, 4);
+  writeAsciiToMemory(string, ptr);
+  bufSize += string.length + 1;
+ });
+ return 0;
+}
+
+function _environ_sizes_get(penviron_count, penviron_buf_size) {
+ var strings = getEnvStrings();
+ SAFE_HEAP_STORE(penviron_count | 0, strings.length | 0, 4);
+ var bufSize = 0;
+ strings.forEach(function(string) {
+  bufSize += string.length + 1;
+ });
+ SAFE_HEAP_STORE(penviron_buf_size | 0, bufSize | 0, 4);
+ return 0;
+}
+
+function _exit(status) {
+ exit(status);
 }
 
 function _fd_close(fd) {
@@ -9937,22 +10112,32 @@ function checkIncomingModuleAPI() {
 }
 
 var asmLibraryArg = {
+ "__assert_fail": ___assert_fail,
  "__cxa_allocate_exception": ___cxa_allocate_exception,
  "__cxa_throw": ___cxa_throw,
+ "__syscall_faccessat": ___syscall_faccessat,
  "__syscall_fcntl64": ___syscall_fcntl64,
  "__syscall_fstat64": ___syscall_fstat64,
+ "__syscall_ftruncate64": ___syscall_ftruncate64,
  "__syscall_ioctl": ___syscall_ioctl,
  "__syscall_lstat64": ___syscall_lstat64,
  "__syscall_newfstatat": ___syscall_newfstatat,
  "__syscall_openat": ___syscall_openat,
+ "__syscall_rmdir": ___syscall_rmdir,
  "__syscall_stat64": ___syscall_stat64,
+ "__syscall_unlinkat": ___syscall_unlinkat,
  "_emscripten_date_now": __emscripten_date_now,
  "_emscripten_get_now_is_monotonic": __emscripten_get_now_is_monotonic,
+ "_gmtime_js": __gmtime_js,
+ "_tzset_js": __tzset_js,
  "abort": _abort,
  "alignfault": alignfault,
  "emscripten_console_error": _emscripten_console_error,
  "emscripten_get_now": _emscripten_get_now,
  "emscripten_resize_heap": _emscripten_resize_heap,
+ "environ_get": _environ_get,
+ "environ_sizes_get": _environ_sizes_get,
+ "exit": _exit,
  "fd_close": _fd_close,
  "fd_read": _fd_read,
  "fd_seek": _fd_seek,
@@ -10671,8 +10856,6 @@ var _delete_fluid_midi_driver = Module["_delete_fluid_midi_driver"] = createExpo
 
 var _fluid_file_set_encoding_quality = Module["_fluid_file_set_encoding_quality"] = createExportWrapper("fluid_file_set_encoding_quality");
 
-var ___errno_location = Module["___errno_location"] = createExportWrapper("__errno_location");
-
 var _fluid_ladspa_is_active = Module["_fluid_ladspa_is_active"] = createExportWrapper("fluid_ladspa_is_active");
 
 var _fluid_ladspa_activate = Module["_fluid_ladspa_activate"] = createExportWrapper("fluid_ladspa_activate");
@@ -10700,6 +10883,8 @@ var _fluid_ladspa_effect_port_exists = Module["_fluid_ladspa_effect_port_exists"
 var _fluid_ladspa_effect_set_control = Module["_fluid_ladspa_effect_set_control"] = createExportWrapper("fluid_ladspa_effect_set_control");
 
 var _fluid_ladspa_effect_link = Module["_fluid_ladspa_effect_link"] = createExportWrapper("fluid_ladspa_effect_link");
+
+var ___errno_location = Module["___errno_location"] = createExportWrapper("__errno_location");
 
 var ___stdio_exit = Module["___stdio_exit"] = createExportWrapper("__stdio_exit");
 
@@ -10735,7 +10920,11 @@ var dynCall_ji = Module["dynCall_ji"] = createExportWrapper("dynCall_ji");
 
 var dynCall_iiji = Module["dynCall_iiji"] = createExportWrapper("dynCall_iiji");
 
+var dynCall_jjii = Module["dynCall_jjii"] = createExportWrapper("dynCall_jjii");
+
 var dynCall_jiji = Module["dynCall_jiji"] = createExportWrapper("dynCall_jiji");
+
+var dynCall_jiij = Module["dynCall_jiij"] = createExportWrapper("dynCall_jiij");
 
 Module["ccall"] = ccall;
 
