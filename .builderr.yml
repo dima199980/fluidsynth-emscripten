@@ -19,7 +19,7 @@ workflows:
       wasm:
         group: ci
         image: emscripten/emsdk:3.1.10
-        artifacts: true
+        artifacts: "${stepName}.md"
         resources:
           cpu: 4000
           memory: 2000
@@ -29,3 +29,4 @@ workflows:
           - ./build_libsndfile.sh
           - ./build.sh
           - cp -r dist /var/www/
+          - ls -l dist | awk -v link="$BUILDERR_ARTIFACTS_LINK" 'NR>1 {printf "- [%s](%s/dist/%s) %d bytes\n", $9, link, $9, $5}' > /var/www/wasm.md
