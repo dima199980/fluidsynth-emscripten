@@ -74,7 +74,10 @@ uses melodic channels 0–8 and drum channel 9, and is remapped onto ten private
 MIDI channels, so at most 25 tracks fit into the default 256 MIDI channels. Each
 track keeps its own drum channel across reset and seek. Channel controllers,
 program changes, and pitch bends remain within that track. Audio and
-reverb/chorus are routed to the same track group.
+reverb/chorus are routed to the same track group. Always set `synth.effects-groups`
+equal to `synth.audio-groups`: it defaults to 1, and then the reverb/chorus of
+every track is mixed into group 0 while the other groups play dry — silently,
+with no error.
 Render all groups with `fluid_synth_process`; fewer output groups intentionally
 wrap/mix according to the normal FluidSynth group semantics. As before, callers
 must zero output buffers before rendering. General SMF channel layouts and
