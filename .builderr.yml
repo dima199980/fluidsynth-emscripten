@@ -3,9 +3,7 @@ workflows:
     when:
       event: check_suite.requested
     pipeline:
-      # build-native/, not build/: both steps share the checkout and build.sh wipes build/.
       check:
-        group: ci
         image: debian:bookworm-slim
         resources:
           cpu: 2000
@@ -16,8 +14,11 @@ workflows:
           - cmake -S . -B build-native -DCMAKE_BUILD_TYPE=Release -Denable-oss=off
           - make -C build-native -j"$(nproc)" check
 
+  build:
+    when:
+      event: push
+    pipeline:
       wasm:
-        group: ci
         image: emscripten/emsdk:3.1.10
         artifacts: "${stepName}.md"
         resources:
@@ -30,3 +31,11 @@ workflows:
           - ./build.sh
           - cp -r dist /var/www/
           - ls -l dist | awk -v link="$BUILDERR_ARTIFACTS_LINK" 'NR>1 {printf "- [%s](%s/dist/%s) %d bytes\n", $9, link, $9, $5}' > /var/www/wasm.md
+
+      publish:
+        when:
+          branch: master
+        image: node:24-slim
+        commands:
+          - echo "//npm.terra.songsterr.com/:_authToken=${NPM_TOKEN}" > .npmrc
+          - ./publish.sh

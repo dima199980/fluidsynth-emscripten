@@ -16,9 +16,15 @@ Prerequisites (Debian/Ubuntu): `git python3 wget xz-utils cmake make pkg-config 
 
 Both scripts source `emsdk-env.sh`, which installs Emscripten `3.1.10` (override with `EMSDK_VERSION`) into `../emsdk` unless `emcmake` is already on `PATH`. An `emcmake` you provide yourself must run with node < 18: 3.1.10 output calls the global `fetch` node 18+ ships, and autoconf's run test fails with `cannot run C compiled programs`.
 
+## Install
+
+```shell
+npm install @songsterr/fluidsynth-emscripten   # @songsterr scope resolves to npm.terra.songsterr.com
+```
+
 ## CI
 
-Builderr (`.builderr.yml`) runs on every push: fluidsynth's own `make check` natively, and the full wasm build with `dist/` attached as artifacts.
+Builderr (`.builderr.yml`) runs on every push: fluidsynth's own `make check` natively, and the full wasm build with `dist/` attached as artifacts. A push to `master` also publishes that CI-built `dist/` as `@songsterr/fluidsynth-emscripten` to `npm.terra.songsterr.com`, unless `package.json`'s version is already there — bump `version` to release.
 
 ## Build with Docker (enikey87)
 
