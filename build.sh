@@ -3,25 +3,7 @@
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
-if command -v emcmake >/dev/null 2>&1; then
-    echo "emcmake is available"
-    # Proceed with your script that uses emcmake
-else
-    echo "emcmake is not available"
-
-    # Check if the emsdk directory does not exist
-    if [ ! -d "../emsdk" ]; then
-        # Clone the emsdk repository into the parent directory
-        git clone https://github.com/emscripten-core/emsdk.git ../emsdk
-    fi
-
-    cd ../emsdk
-    ./emsdk install latest
-    ./emsdk activate latest
-
-    source ./emsdk_env.sh
-    cd ../fluidsynth-emscripten
-fi
+source "$(dirname "$0")/emsdk-env.sh"
 
 # Function to compile libfluidsynth with specified flags and output suffix
 compile_libfluidsynth() {
@@ -40,10 +22,10 @@ compile_libfluidsynth() {
   if [ -n "$DEBUG" ]; then
     echo "Configure CMake projects for Debug"
     local c_debug_flags="-Wbad-function-cast -Wcast-function-type -g4 -sSAFE_HEAP=1 -sASSERTIONS=1"
-    emcmake cmake -B build -Denable-oss=off ${extra_cmake_flags} -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="${c_debug_flags} ${extra_c_flags}" -DCMAKE_CXX_FLAGS="${c_debug_flags} ${extra_cxx_flags}" .
+    emcmake cmake -B build -Denable-oss=off ${LIBFLUIDSYNTH_CMAKE_FLAGS} ${extra_cmake_flags} -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="${c_debug_flags} ${extra_c_flags}" -DCMAKE_CXX_FLAGS="${c_debug_flags} ${extra_cxx_flags}" .
   else
     echo "Configure CMake projects for Release"
-    emcmake cmake -B build -Denable-oss=off ${extra_cmake_flags} -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="${extra_c_flags}" -DCMAKE_CXX_FLAGS="${extra_cxx_flags}" .
+    emcmake cmake -B build -Denable-oss=off ${LIBFLUIDSYNTH_CMAKE_FLAGS} ${extra_cmake_flags} -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="${extra_c_flags}" -DCMAKE_CXX_FLAGS="${extra_cxx_flags}" .
   fi
 
   # Build the project
@@ -76,17 +58,20 @@ function compile_libfluidsynth_configurations () {
 }
 
 # Configuration without sf3 support
+LIBFLUIDSYNTH_CMAKE_FLAGS="-Denable-libsndfile=off"
 compile_libfluidsynth_configurations
 
 # Configuration with sf3 support though libsndfile addon
-LIBFLUIDSYNTH_DEPS_PKG_CONFIG_PATH=$(readlink -f ../libsndfile-emscripten/deps/lib/pkgconfig)
+LIBFLUIDSYNTH_DEPS_PKG_CONFIG_DIR=$(readlink -f ../libsndfile-emscripten/deps/lib/pkgconfig)
 
-if [ ! -d "$LIBFLUIDSYNTH_DEPS_PKG_CONFIG_PATH" ]; then
-    echo "Error: libsndfile artifacts directory '$LIBFLUIDSYNTH_DEPS_PKG_CONFIG_PATH' does not exist."
+if [ ! -d "$LIBFLUIDSYNTH_DEPS_PKG_CONFIG_DIR" ]; then
+    echo "Error: libsndfile artifacts directory '$LIBFLUIDSYNTH_DEPS_PKG_CONFIG_DIR' does not exist."
     exit 1
 fi
 
-export PKG_CONFIG_PATH=${LIBFLUIDSYNTH_DEPS_PKG_CONFIG_PATH}
+# LIBDIR rather than PATH: the host's own libsndfile must stay invisible to pkg-config.
+export PKG_CONFIG_LIBDIR=${LIBFLUIDSYNTH_DEPS_PKG_CONFIG_DIR}
+LIBFLUIDSYNTH_CMAKE_FLAGS="-Denable-libsndfile=on"
 
 LIBFLUIDSYNTH_OUTPUT_FILENAME_PREFIX="-sf3"
 
