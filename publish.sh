@@ -5,8 +5,12 @@ name=$(node -p "require('./package.json').name")
 version=$(node -p "require('./package.json').version")
 registry=$(node -p "require('./package.json').publishConfig.registry")
 
-if npm view "${name}@${version}" version --registry "$registry" >/dev/null 2>&1; then
+if out=$(npm view "${name}@${version}" version --registry "$registry" 2>&1); then
     echo "${name}@${version} is already published, skipping"
     exit 0
+elif ! grep -q "E404" <<<"$out"; then
+    # Anything but "no such version" (401, network, ...) must not fall through to a publish attempt.
+    echo "$out"
+    exit 1
 fi
 npm publish "$@"

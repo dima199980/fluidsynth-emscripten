@@ -35,7 +35,7 @@ workflows:
       publish:
         when:
           branch: master
-        image: node:24-slim
+        # Not node:*: a Vault secret keyed on that image name overrides NPM_TOKEN with a stale value.
+        image: hub-eu.terra.songsterr.com/builderr-npm-24-slim
         commands:
-          - echo "//npm.terra.songsterr.com/:_authToken=${NPM_TOKEN}" > .npmrc
           - ./publish.sh
